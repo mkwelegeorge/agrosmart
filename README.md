@@ -1,11 +1,4 @@
-# Hack-NU-thon
-This project is made in Hack-NU-Thon  which is Hackathon organised by Nirma University
 
-### Group Members
-1. Saurabh Jejurkar
-2. Vedant Jore
-3. Harshal Hirpara
-4. Ansh Asija
 
 ## Description
 
