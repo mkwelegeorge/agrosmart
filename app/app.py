@@ -1,6 +1,6 @@
 # Importing essential libraries and modules
 
-from flask import Flask, render_template, request, Markup
+from flask import Flask, render_template, request, Markup,redirect
 import numpy as np
 import pandas as pd
 from utils.disease import disease_dic
@@ -13,6 +13,14 @@ import torch
 from torchvision import transforms
 from PIL import Image
 from utils.model import ResNet9
+from flask import Flask
+
+app = Flask(__name__)
+app.debug = True
+
+# your Flask app routes and logic here...
+
+
 # ==============================================================================================
 
 # -------------------------LOADING THE TRAINED MODELS -----------------------------------------------
@@ -133,7 +141,7 @@ app = Flask(__name__)
 
 @ app.route('/')
 def home():
-    title = 'Kheti Kaksha - Home'
+    title = 'AGRO-SMART - Home'
     return render_template('index.html', title=title)
 
 # render crop recommendation form page
@@ -141,7 +149,7 @@ def home():
 
 @ app.route('/crop-recommend')
 def crop_recommend():
-    title = 'Kheti Kaksha - Crop Recommendation'
+    title = 'AGRO-SMART - Crop Recommendation'
     return render_template('crop.html', title=title)
 
 # render fertilizer recommendation form page
@@ -149,16 +157,19 @@ def crop_recommend():
 
 @ app.route('/store')
 def store_recommendation():
-    title = 'Kheti Kaksha - Fertilizer Store'
+    title = 'AGRO-SMART - Fertilizer Store'
 
     return render_template('STORE.html', title=title)
 
 # render fertilizer recommendation form page
-
+@ app.route('/fertilizer')
+def fertilizer_recommendation():
+    title = 'AGRO-SMART- Fertilizer Suggestion'
+    return render_template('fertilizer.html', title=title)
 
 @ app.route('/Blog_EN')
 def blog_english():
-    title = 'Kheti Kaksha - Blog'
+    title = 'AGRO-SMART - Blog'
 
     return render_template('Blog_EN.html', title=title)
 
@@ -174,20 +185,18 @@ def blog_english():
 # render crop recommendation result page
 
 
-@ app.route('/crop-predict', methods=['POST'])
+@ app.route('/crop-predict', methods=[ 'POST'])
 def crop_prediction():
-    title = 'Kheti Kaksha - Crop Recommendation'
-
+    title = 'AGRO-SMART'
     if request.method == 'POST':
         N = int(request.form['nitrogen'])
         P = int(request.form['phosphorous'])
         K = int(request.form['pottasium'])
         ph = float(request.form['ph'])
         rainfall = float(request.form['rainfall'])
-
-        # state = request.form.get("stt")
+        #state = request.form.get("stt")
         city = request.form.get("city")
-
+        
         if weather_fetch(city) != None:
             temperature, humidity = weather_fetch(city)
             data = np.array([[N, P, K, temperature, humidity, ph, rainfall]])
@@ -201,55 +210,55 @@ def crop_prediction():
             return render_template('try_again.html', title=title)
 
 # render fertilizer recommendation result page
+@app.route('/fertilizer_recommendation', methods=['GET', 'POST'])
+def fert_recommend():
+    title = 'AGRO-SMART'
+    if request.method == 'POST':
+     crop_name = request.form['cropname']
+     print(crop_name)
+     n = request.form['nitrogen']
+     p = request.form['phosphorous']
+     k = request.form['pottasium']
+     #ph = request.form['ph']
+     print(k)
+     df = pd.read_csv('D:\\AGROSMART\\app\\Data\\fertilizer.csv')
+     nr = df[df['Crop'] == crop_name]['N'].iloc[0]
+     pr = df[df['Crop'] == crop_name]['P'].iloc[0]
+     kr = df[df['Crop'] == crop_name]['K'].iloc[0]
+     
+     n = nr - int(n)
+     p = pr - int(p)
+     k = kr - int(k)
+     temp = {abs(n): "N", abs(p): "P", abs(k): "K"}
+     max_value = temp[max(temp.keys())]
+     if max_value == "N":
+        if n < 0:
+            key = 'NHigh'
+        else:
+            key = "Nlow"
+     elif max_value == "P":
+        if p < 0:
+            key = 'PHigh'
+        else:
+            key = "Plow"
+     else:
+        if k < 0:
+            key = 'KHigh'
+        else:
+            key = "Klow"
 
+     response = Markup(str(fertilizer_dic[key]))
 
-# @ app.route('/fertilizer-predict', methods=['POST'])
-# def fert_recommend():
-#     title = 'Kheti Kaksha - Fertilizer Suggestion'
-
-#     crop_name = str(request.form['cropname'])
-#     N = int(request.form['nitrogen'])
-#     P = int(request.form['phosphorous'])
-#     K = int(request.form['pottasium'])
-#     # ph = float(request.form['ph'])
-
-#     df = pd.read_csv('Data/fertilizer.csv')
-
-#     nr = df[df['Crop'] == crop_name]['N'].iloc[0]
-#     pr = df[df['Crop'] == crop_name]['P'].iloc[0]
-#     kr = df[df['Crop'] == crop_name]['K'].iloc[0]
-
-#     n = nr - N
-#     p = pr - P
-#     k = kr - K
-#     temp = {abs(n): "N", abs(p): "P", abs(k): "K"}
-#     max_value = temp[max(temp.keys())]
-#     if max_value == "N":
-#         if n < 0:
-#             key = 'NHigh'
-#         else:
-#             key = "Nlow"
-#     elif max_value == "P":
-#         if p < 0:
-#             key = 'PHigh'
-#         else:
-#             key = "Plow"
-#     else:
-#         if k < 0:
-#             key = 'KHigh'
-#         else:
-#             key = "Klow"
-
-#     response = Markup(str(fertilizer_dic[key]))
-
-#     return render_template('fertilizer-result.html', recommendation=response, title=title)
+     return render_template('fertilizer-result.html', recommendation=response, title=title)
+    
+    else:
+      return render_template('fertilizer.html',title=title)  
 
 # render disease prediction result page
 
-
 @app.route('/disease-predict', methods=['GET', 'POST'])
 def disease_prediction():
-    title = 'Kheti Kaksha - Disease Detection'
+    title = 'AGRO-SMART - Disease Detection'
 
     if request.method == 'POST':
         if 'file' not in request.files:
@@ -263,10 +272,12 @@ def disease_prediction():
             prediction = predict_image(img)
 
             prediction = Markup(str(disease_dic[prediction]))
-            return render_template('disease-result.html', prediction=prediction, title=title)
+            return render_template('disease-result.html', prediction=prediction, title=title)  
         except:
             pass
     return render_template('disease.html', title=title)
+       
+        
 
 
 # ===============================================================================================
